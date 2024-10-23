@@ -54,33 +54,23 @@ class _MainScreenState extends State<MainScreen> {
               _selectedIndex = index;
             });
           },
-          items: [
+          showSelectedLabels: true,
+          showUnselectedLabels: true,
+          type: BottomNavigationBarType.fixed,
+          selectedItemColor: Colors.red,
+          unselectedItemColor: Colors.black,
+          items: const [
             BottomNavigationBarItem(
-              icon: Text(
-                'EVENTS',
-                style: TextStyle(
-                  color: _selectedIndex == 0 ? Colors.red : Colors.black,
-                ),
-              ),
-              label: '',
+              icon: SizedBox.shrink(), // Empty icon
+              label: 'EVENTS',
             ),
             BottomNavigationBarItem(
-              icon: Text(
-                'TICKETS',
-                style: TextStyle(
-                  color: _selectedIndex == 1 ? Colors.red : Colors.black,
-                ),
-              ),
-              label: '',
+              icon: SizedBox.shrink(), // Empty icon
+              label: 'TICKETS',
             ),
             BottomNavigationBarItem(
-              icon: Text(
-                'RECORDS',
-                style: TextStyle(
-                  color: _selectedIndex == 2 ? Colors.red : Colors.black,
-                ),
-              ),
-              label: '',
+              icon: SizedBox.shrink(), // Empty icon
+              label: 'RECORDS',
             ),
           ],
         ),

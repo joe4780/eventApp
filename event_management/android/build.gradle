@@ -1,32 +1,16 @@
-apply plugin: 'com.android.application'
-
-android {
-    compileSdkVersion 34 // Update to the latest if necessary
-
-    defaultConfig {
-        applicationId "com.example.yourapp"
-        minSdkVersion 21 // Set to your desired minimum
-        targetSdkVersion 34 // Set to your target SDK version
-        versionCode 1
-        versionName "1.0"
+buildscript {
+    ext.kotlin_version = '1.7.10'
+    repositories {
+        google()
+        mavenCentral()
     }
 
-    buildTypes {
-        release {
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-        }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:7.3.0'
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
     }
 }
 
-dependencies {
-    implementation 'com.google.android.material:material:1.4.0'
-    implementation 'androidx.appcompat:appcompat:1.3.1'
-    implementation 'androidx.core:core-ktx:1.6.0'
-    // Add other dependencies as needed
-}
-
-// This part stays in the root build.gradle
 allprojects {
     repositories {
         google()
@@ -34,12 +18,9 @@ allprojects {
     }
 }
 
-rootProject.buildDir = "../build"
+rootProject.buildDir = '../build'
 subprojects {
     project.buildDir = "${rootProject.buildDir}/${project.name}"
-}
-subprojects {
-    project.evaluationDependsOn(":app")
 }
 
 tasks.register("clean", Delete) {
