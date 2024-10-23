@@ -1,5 +1,4 @@
 import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'dart:html' as html;
 import 'dart:typed_data';
@@ -101,7 +100,7 @@ class TicketDetailsScreen extends StatelessWidget {
                         child: ticketData['image'] != null &&
                                 ticketData['image']!.isNotEmpty
                             ? Image.asset(
-                                ticketData['image']!,
+                                'assets/event_pic1.png', // Use the asset path here
                                 fit: BoxFit.cover,
                               )
                             : const Center(child: Text('No Image Available')),
