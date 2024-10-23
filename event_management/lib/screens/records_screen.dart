@@ -25,6 +25,7 @@ class _RecordsScreenState extends State<RecordsScreen> {
   List<String> _audioList = [];
   html.MediaRecorder? _mediaRecorder; // Web-specific media recorder
   List<html.Blob> _recordedChunks = []; // Web-specific recorded audio data
+  String? _blobUrl; // Store the blob URL separately
 
   @override
   void initState() {
@@ -94,11 +95,12 @@ class _RecordsScreenState extends State<RecordsScreen> {
   Future<void> _stopWebRecording() async {
     _mediaRecorder!.stop();
     final blob = html.Blob(_recordedChunks, 'audio/webm');
-    final url = html.Url.createObjectUrlFromBlob(blob);
+    _blobUrl =
+        html.Url.createObjectUrlFromBlob(blob); // Store blob URL separately
     setState(() {
       _isRecording = false;
       _isRecorded = true;
-      _filePath = url; // Use the URL of the blob
+      _filePath = _blobUrl; // Use the URL of the blob
     });
   }
 
@@ -125,7 +127,9 @@ class _RecordsScreenState extends State<RecordsScreen> {
 
   void _playWebAudio(String audioUrl) {
     final audioElement = html.AudioElement(audioUrl);
-    audioElement.play();
+    audioElement.play().catchError((error) {
+      print("Error playing audio: $error"); // Catch any error during playback
+    });
     setState(() {
       _isPlaying = true;
     });
@@ -139,7 +143,7 @@ class _RecordsScreenState extends State<RecordsScreen> {
   Future<void> _submitRecording() async {
     if (_filePath != null) {
       if (kIsWeb) {
-        _downloadWebAudio(_filePath!);
+        _downloadWebAudio(_blobUrl!); // Use the blob URL for download
       } else {
         _audioList.add(_filePath!);
         SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -151,10 +155,11 @@ class _RecordsScreenState extends State<RecordsScreen> {
       }
       // For web, add the recorded audio to the list
       if (kIsWeb) {
-        _audioList.add(_filePath!);
+        _audioList.add(_blobUrl!);
         SharedPreferences prefs = await SharedPreferences.getInstance();
         await prefs.setStringList('audioList', _audioList);
       }
+      _showSuccessDialog(); // Show success dialog
     }
   }
 
@@ -173,6 +178,26 @@ class _RecordsScreenState extends State<RecordsScreen> {
         _audioList = savedAudioList;
       });
     }
+  }
+
+  void _showSuccessDialog() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Success'),
+          content: const Text('Submit successfully'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
