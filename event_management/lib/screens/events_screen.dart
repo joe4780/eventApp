@@ -34,7 +34,9 @@ class EventsScreen extends StatefulWidget {
 }
 
 class _EventsScreenState extends State<EventsScreen> {
-  List<Event> _events = [];
+  List<Event> _allEvents = [];
+  List<Event> _filteredEvents = [];
+  String _currentFilter = 'ALL';
 
   @override
   void initState() {
@@ -48,7 +50,26 @@ class _EventsScreenState extends State<EventsScreen> {
     final List<dynamic> data = jsonDecode(response);
 
     setState(() {
-      _events = data.map((json) => Event.fromJson(json)).toList();
+      _allEvents = data.map((json) => Event.fromJson(json)).toList();
+      _applyFilter(_currentFilter);
+    });
+  }
+
+  void _applyFilter(String filter) {
+    setState(() {
+      _currentFilter = filter;
+      switch (filter) {
+        case 'READ':
+          _filteredEvents = _allEvents.where((event) => event.isRead).toList();
+          break;
+        case 'UNREAD':
+          _filteredEvents = _allEvents.where((event) => !event.isRead).toList();
+          break;
+        case 'ALL':
+        default:
+          _filteredEvents = List.from(_allEvents);
+          break;
+      }
     });
   }
 
@@ -77,11 +98,11 @@ class _EventsScreenState extends State<EventsScreen> {
               ],
             ),
             Expanded(
-              child: _events.isNotEmpty
+              child: _allEvents.isNotEmpty
                   ? ListView.builder(
-                      itemCount: _events.length,
+                      itemCount: _filteredEvents.length,
                       itemBuilder: (context, index) {
-                        return _EventListItem(event: _events[index]);
+                        return _EventListItem(event: _filteredEvents[index]);
                       },
                     )
                   : const Center(child: CircularProgressIndicator()),
@@ -94,10 +115,24 @@ class _EventsScreenState extends State<EventsScreen> {
 
   Widget _filterButton(String text) {
     return TextButton(
-      onPressed: () {
-        // Filter logic can be added later
-      },
-      child: Text(text),
+      onPressed: () => _applyFilter(text),
+      style: ButtonStyle(
+        backgroundColor: MaterialStateProperty.resolveWith<Color>(
+          (Set<MaterialState> states) {
+            return _currentFilter == text
+                ? Colors.blue.withOpacity(0.2)
+                : Colors.transparent;
+          },
+        ),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: _currentFilter == text ? Colors.blue : Colors.black,
+          fontWeight:
+              _currentFilter == text ? FontWeight.bold : FontWeight.normal,
+        ),
+      ),
     );
   }
 }
