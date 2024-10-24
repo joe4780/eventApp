@@ -315,8 +315,7 @@ class _RecordsScreenState extends State<RecordsScreen> {
           IconButton(
             icon: const Icon(Icons.play_arrow),
             onPressed: () async {
-              await _playAudio(
-                  audioPath); // Pass audioPath to play the correct audio
+              await _playAudio(audioPath);
             },
           ),
         ],
