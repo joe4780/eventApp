@@ -117,8 +117,8 @@ class _EventsScreenState extends State<EventsScreen> {
     return TextButton(
       onPressed: () => _applyFilter(text),
       style: ButtonStyle(
-        backgroundColor: MaterialStateProperty.resolveWith<Color>(
-          (Set<MaterialState> states) {
+        backgroundColor: WidgetStateProperty.resolveWith<Color>(
+          (Set<WidgetState> states) {
             return _currentFilter == text
                 ? Colors.blue.withOpacity(0.2)
                 : Colors.transparent;

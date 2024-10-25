@@ -1,8 +1,9 @@
+import 'dart:io';
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'dart:html' as html;
 import 'dart:typed_data';
 import 'package:flutter/rendering.dart';
+import 'package:gallery_saver/gallery_saver.dart';
 
 class TicketDetailsScreen extends StatelessWidget {
   final Map<String, String> ticketData;
@@ -21,26 +22,25 @@ class TicketDetailsScreen extends StatelessWidget {
       return;
     }
 
-    // Capture the image from the RepaintBoundary
-    RenderRepaintBoundary boundary =
-        globalKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
-    var image = await boundary.toImage(pixelRatio: 3.0);
-    ByteData? byteData = await image.toByteData(format: ImageByteFormat.png);
-    Uint8List pngBytes = byteData!.buffer.asUint8List();
+    try {
+      // Capture the image from the RepaintBoundary
+      RenderRepaintBoundary boundary =
+          globalKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
+      var image = await boundary.toImage(pixelRatio: 3.0);
+      ByteData? byteData = await image.toByteData(format: ImageByteFormat.png);
+      Uint8List pngBytes = byteData!.buffer.asUint8List();
 
-    // Convert the image bytes to a Blob
-    final blob = html.Blob([pngBytes]);
-    final url = html.Url.createObjectUrlFromBlob(blob);
-
-    // Create an anchor element and trigger download
-    final link = html.AnchorElement(href: url)
-      ..setAttribute('download', 'ticket.png')
-      ..click();
-
-    // Revoke the object URL after download
-    html.Url.revokeObjectUrl(url);
-
-    _showDialog(context, "Ticket saved successfully");
+      // Save the image to the gallery
+      final result =
+          await GallerySaver.saveImage(pngBytes.buffer.asUint8List() as String);
+      if (result == true) {
+        _showDialog(context, "Ticket saved successfully to gallery");
+      } else {
+        _showDialog(context, "Failed to save ticket to gallery");
+      }
+    } catch (e) {
+      _showDialog(context, "An error occurred: $e");
+    }
   }
 
   void _showDialog(BuildContext context, String message) {
@@ -99,8 +99,9 @@ class TicketDetailsScreen extends StatelessWidget {
                         color: Colors.grey[300],
                         child: ticketData['image'] != null &&
                                 ticketData['image']!.isNotEmpty
-                            ? Image.asset(
-                                'assets/event_pic1.png', // Use the asset path here
+                            ? Image.file(
+                                File(ticketData[
+                                    'image']!), // Load the image from file
                                 fit: BoxFit.cover,
                               )
                             : const Center(child: Text('No Image Available')),

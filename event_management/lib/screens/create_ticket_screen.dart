@@ -1,8 +1,6 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
-import 'dart:html' as html;
 import 'ticket_details_screen.dart';
 
 class CreateTicketScreen extends StatefulWidget {
@@ -19,62 +17,31 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
   final ceremonies = ['OPENING CEREMONY', 'CLOSING CEREMONY'];
   final ImagePicker _picker = ImagePicker();
 
-  // Updated image picker function
+  // Updated image picker function for mobile
   Future<void> _pickImage() async {
-    if (kIsWeb) {
-      // Web implementation
-      final html.FileUploadInputElement input = html.FileUploadInputElement()
-        ..accept = 'image/*';
-      input.click();
+    try {
+      final XFile? pickedFile = await _picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 1800,
+        maxHeight: 1800,
+      );
 
-      input.onChange.listen((event) {
-        final file = input.files?.first;
-        if (file != null) {
-          final reader = html.FileReader();
-          reader.readAsDataUrl(file);
-          reader.onLoad.listen((event) {
-            setState(() {
-              selectedImageUrl = reader.result as String;
-            });
-          });
-        }
-      });
-    } else {
-      // Mobile implementation
-      try {
-        final XFile? pickedFile = await _picker.pickImage(
-          source: ImageSource.gallery,
-          maxWidth: 1800,
-          maxHeight: 1800,
-        );
-
-        if (pickedFile != null) {
-          setState(() {
-            selectedImageUrl = pickedFile.path;
-          });
-        }
-      } catch (e) {
-        debugPrint('Error picking image: $e');
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to pick image')),
-        );
+      if (pickedFile != null) {
+        setState(() {
+          selectedImageUrl = pickedFile.path;
+        });
       }
+    } catch (e) {
+      debugPrint('Error picking image: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to pick image')),
+      );
     }
   }
 
   Widget _buildImagePreview() {
     if (selectedImageUrl == null) {
       return const Center(child: Text('Preview Image'));
-    }
-
-    if (kIsWeb) {
-      return Image.network(
-        selectedImageUrl!,
-        fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) {
-          return const Center(child: Text('Error loading image'));
-        },
-      );
     } else {
       return Image.file(
         File(selectedImageUrl!),

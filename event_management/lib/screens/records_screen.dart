@@ -1,12 +1,9 @@
-import 'dart:html' as html; // For web platforms
 import 'dart:io';
-import 'dart:typed_data'; // For handling blobs in web
 import 'package:flutter/material.dart';
 import 'package:flutter_sound/flutter_sound.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:flutter/foundation.dart'; // For kIsWeb
 
 class RecordsScreen extends StatefulWidget {
   const RecordsScreen({super.key});
@@ -23,151 +20,71 @@ class _RecordsScreenState extends State<RecordsScreen> {
   bool _isPlaying = false;
   String? _filePath;
   List<String> _audioList = [];
-  html.MediaRecorder? _mediaRecorder; // Web-specific media recorder
-  List<html.Blob> _recordedChunks = []; // Web-specific recorded audio data
-  String? _blobUrl; // Store the blob URL separately
 
   @override
   void initState() {
     super.initState();
-    if (!kIsWeb) {
-      _recorder = FlutterSoundRecorder();
-      _player = FlutterSoundPlayer();
-      _requestPermissions();
-    }
+    _recorder = FlutterSoundRecorder();
+    _player = FlutterSoundPlayer();
+    _requestPermissions();
     _loadAudioList();
   }
 
   Future<void> _requestPermissions() async {
-    if (!kIsWeb) {
-      PermissionStatus status = await Permission.microphone.request();
-      if (status != PermissionStatus.granted) {
-        return; // Ensure further actions don't continue without permission
-      }
+    PermissionStatus status = await Permission.microphone.request();
+    if (status != PermissionStatus.granted) {
+      return; // Ensure further actions don't continue without permission
     }
   }
 
   Future<void> _startRecording() async {
-    if (kIsWeb) {
-      await _startWebRecording();
-    } else {
-      Directory appDir = await getApplicationDocumentsDirectory();
-      String filePath =
-          '${appDir.path}/recording_${DateTime.now().millisecondsSinceEpoch}.aac';
-      await _recorder!.openRecorder();
-      await _recorder!.startRecorder(toFile: filePath);
-      setState(() {
-        _isRecording = true;
-        _isRecorded = false;
-        _filePath = filePath;
-      });
-    }
-  }
-
-  Future<void> _startWebRecording() async {
-    final stream = await html.window.navigator.getUserMedia(audio: true);
-    _mediaRecorder = html.MediaRecorder(stream);
-
-    _mediaRecorder!.addEventListener('dataavailable', (html.Event event) {
-      final html.BlobEvent blobEvent = event as html.BlobEvent;
-      _recordedChunks.add(blobEvent.data!); // Store the Blob (audio data)
-    });
-
-    _mediaRecorder!.start();
+    Directory appDir = await getApplicationDocumentsDirectory();
+    String filePath =
+        '${appDir.path}/recording_${DateTime.now().millisecondsSinceEpoch}.aac';
+    await _recorder!.openRecorder();
+    await _recorder!.startRecorder(toFile: filePath);
     setState(() {
       _isRecording = true;
+      _isRecorded = false;
+      _filePath = filePath;
     });
   }
 
   Future<void> _stopRecording() async {
-    if (kIsWeb && _mediaRecorder != null) {
-      await _stopWebRecording();
-    } else {
-      await _recorder!.stopRecorder();
-      await _recorder!.closeRecorder();
-      setState(() {
-        _isRecording = false;
-        _isRecorded = true;
-      });
-    }
-  }
-
-  Future<void> _stopWebRecording() async {
-    _mediaRecorder!.stop();
-    final blob = html.Blob(_recordedChunks, 'audio/webm');
-    _blobUrl =
-        html.Url.createObjectUrlFromBlob(blob); // Store blob URL separately
+    await _recorder!.stopRecorder();
+    await _recorder!.closeRecorder();
     setState(() {
       _isRecording = false;
       _isRecorded = true;
-      _filePath = _blobUrl; // Use the URL of the blob
     });
   }
 
   Future<void> _playAudio(String audioPath) async {
-    if (audioPath != null) {
-      if (kIsWeb) {
-        _playWebAudio(audioPath);
-      } else {
-        await _player!.openPlayer();
-        await _player!.startPlayer(
-          fromURI: audioPath,
-          whenFinished: () {
-            setState(() {
-              _isPlaying = false;
-            });
-          },
-        );
+    await _player!.openPlayer();
+    await _player!.startPlayer(
+      fromURI: audioPath,
+      whenFinished: () {
         setState(() {
-          _isPlaying = true;
+          _isPlaying = false;
         });
-      }
-    }
-  }
-
-  void _playWebAudio(String audioUrl) {
-    final audioElement = html.AudioElement(audioUrl);
-    audioElement.play().catchError((error) {
-      print("Error playing audio: $error"); // Catch any error during playback
-    });
+      },
+    );
     setState(() {
       _isPlaying = true;
-    });
-    audioElement.onEnded.listen((_) {
-      setState(() {
-        _isPlaying = false;
-      });
     });
   }
 
   Future<void> _submitRecording() async {
     if (_filePath != null) {
-      if (kIsWeb) {
-        _downloadWebAudio(_blobUrl!); // Use the blob URL for download
-      } else {
-        _audioList.add(_filePath!);
-        SharedPreferences prefs = await SharedPreferences.getInstance();
-        await prefs.setStringList('audioList', _audioList);
-        setState(() {
-          _isRecorded = false;
-          _filePath = null;
-        });
-      }
-      // For web, add the recorded audio to the list
-      if (kIsWeb) {
-        _audioList.add(_blobUrl!);
-        SharedPreferences prefs = await SharedPreferences.getInstance();
-        await prefs.setStringList('audioList', _audioList);
-      }
+      _audioList.add(_filePath!);
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      await prefs.setStringList('audioList', _audioList);
+      setState(() {
+        _isRecorded = false;
+        _filePath = null;
+      });
       _showSuccessDialog(); // Show success dialog
     }
-  }
-
-  void _downloadWebAudio(String blobUrl) {
-    final anchor = html.AnchorElement(href: blobUrl)
-      ..setAttribute(
-          'download', 'recording_${DateTime.now().millisecondsSinceEpoch}.webm')
-      ..click();
   }
 
   Future<void> _loadAudioList() async {
@@ -202,10 +119,8 @@ class _RecordsScreenState extends State<RecordsScreen> {
 
   @override
   void dispose() {
-    if (!kIsWeb) {
-      _recorder!.closeRecorder();
-      _player!.closePlayer();
-    }
+    _recorder?.closeRecorder();
+    _player?.closePlayer();
     super.dispose();
   }
 

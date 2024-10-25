@@ -16,6 +16,13 @@ allprojects {
         google()
         mavenCentral()
     }
+
+    // Set Kotlin jvmTarget to align with Java 17
+    tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
+        kotlinOptions {
+            jvmTarget = "17" // Align with your Java version 17
+        }
+    }
 }
 
 rootProject.buildDir = '../build'
@@ -23,6 +30,7 @@ subprojects {
     project.buildDir = "${rootProject.buildDir}/${project.name}"
 }
 
+// Clean task to delete build directories
 tasks.register("clean", Delete) {
     delete rootProject.buildDir
 }
