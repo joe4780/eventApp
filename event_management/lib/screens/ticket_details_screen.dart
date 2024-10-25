@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'dart:typed_data';
 import 'package:flutter/rendering.dart';
 import 'package:gallery_saver/gallery_saver.dart';
+import 'package:path_provider/path_provider.dart'; // Import for path_provider
 
 class TicketDetailsScreen extends StatelessWidget {
   final Map<String, String> ticketData;
@@ -30,10 +31,17 @@ class TicketDetailsScreen extends StatelessWidget {
       ByteData? byteData = await image.toByteData(format: ImageByteFormat.png);
       Uint8List pngBytes = byteData!.buffer.asUint8List();
 
+      // Get the temporary directory
+      final directory = await getTemporaryDirectory();
+      final filePath = '${directory.path}/ticket.png';
+
+      // Write the image bytes to a file
+      File imgFile = File(filePath);
+      await imgFile.writeAsBytes(pngBytes);
+
       // Save the image to the gallery
-      final result =
-          await GallerySaver.saveImage(pngBytes.buffer.asUint8List() as String);
-      if (result == true) {
+      final result = await GallerySaver.saveImage(filePath);
+      if (result != null && result) {
         _showDialog(context, "Ticket saved successfully to gallery");
       } else {
         _showDialog(context, "Failed to save ticket to gallery");

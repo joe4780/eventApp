@@ -19,6 +19,7 @@ class EventApp extends StatelessWidget {
         scaffoldBackgroundColor: Colors.white,
       ),
       home: const MainScreen(),
+      debugShowCheckedModeBanner: false, // Optional: Removes the debug banner
     );
   }
 }
