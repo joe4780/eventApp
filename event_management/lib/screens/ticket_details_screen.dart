@@ -107,11 +107,16 @@ class TicketDetailsScreen extends StatelessWidget {
                         color: Colors.grey[300],
                         child: ticketData['image'] != null &&
                                 ticketData['image']!.isNotEmpty
-                            ? Image.file(
-                                File(ticketData[
-                                    'image']!), // Load the image from file
-                                fit: BoxFit.cover,
-                              )
+                            ? (ticketData['image']!.startsWith('assets/')
+                                ? Image.asset(
+                                    ticketData['image']!, // Load from assets
+                                    fit: BoxFit.cover,
+                                  )
+                                : Image.file(
+                                    File(ticketData[
+                                        'image']!), // Load from device file
+                                    fit: BoxFit.cover,
+                                  ))
                             : const Center(child: Text('No Image Available')),
                       ),
                       const SizedBox(height: 16),

@@ -1,9 +1,18 @@
+import 'dart:convert';
 import 'package:event_management/screens/create_ticket_screen.dart';
 import 'package:flutter/material.dart';
-import 'ticket_details_screen.dart'; // Import for the ticket details screen
+import 'package:flutter/services.dart';
+import 'ticket_details_screen.dart';
 
 class TicketsScreen extends StatelessWidget {
   const TicketsScreen({super.key});
+
+  Future<List<dynamic>> loadEventsData() async {
+    // Load and decode JSON file
+    final String jsonString =
+        await rootBundle.loadString('assets/events_data.json');
+    return json.decode(jsonString);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -41,7 +50,7 @@ class TicketsScreen extends StatelessWidget {
               ),
               const SizedBox(height: 24),
 
-              // Tapping a ticket will navigate to the details screen
+              // Display tickets for each category
               _buildTicketSection('OPENING CEREMONY TICKETS'),
               _buildTicketInfo(context, 'JACK', 'A1 ROW7 COLUMN10',
                   'Opening Ceremony', '10:00 AM'),
@@ -60,7 +69,6 @@ class TicketsScreen extends StatelessWidget {
     );
   }
 
-  // Widget for ticket section headers
   Widget _buildTicketSection(String title) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
@@ -73,12 +81,22 @@ class TicketsScreen extends StatelessWidget {
     );
   }
 
-  // Widget to build ticket info and add tap navigation
+  // Method to build ticket info and navigate to details screen
   Widget _buildTicketInfo(BuildContext context, String name, String seat,
       String type, String time) {
     return GestureDetector(
-      onTap: () {
-        // Navigate to the TicketDetailsScreen when tapped
+      onTap: () async {
+        // Load event data from JSON
+        final eventsData = await loadEventsData();
+
+        // Find the event with a matching title for the type
+        final event = eventsData.firstWhere((event) => event['title'] == type,
+            orElse: () => null);
+
+        // Use default image if event or image path not found
+        String imagePath =
+            event != null ? event['pic'] : 'assets/event_pic1.png';
+
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -88,7 +106,7 @@ class TicketsScreen extends StatelessWidget {
                 'seat': seat,
                 'type': type,
                 'time': time,
-                'image': 'assets/ticket_image.png',
+                'image': imagePath, // Pass dynamic image path
               },
             ),
           ),
