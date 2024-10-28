@@ -35,8 +35,10 @@ flutter:
     - assets/event_pic3.png
   uses-material-design: true
 
-# Configuration for Flutter Launcher Icons
+# Configuration Launcher
 flutter_icons:
-  android: true
+  android: "launcher_icon"
   ios: true
-  image_path: "assets/ic_launcher.png" # Path to your launcher icon image
+  image_path: "assets/image.png"
+  adaptive_icon_background: "#ffffff"
+  adaptive_icon_foreground: "assets/image.png"

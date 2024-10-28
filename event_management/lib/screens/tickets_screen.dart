@@ -88,7 +88,7 @@ class TicketsScreen extends StatelessWidget {
                 'seat': seat,
                 'type': type,
                 'time': time,
-                'image': 'event_pic1.png',
+                'image': 'assets/ticket_image.png',
               },
             ),
           ),
