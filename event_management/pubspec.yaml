@@ -42,3 +42,10 @@ flutter_icons:
   image_path: "assets/image.png"
   adaptive_icon_background: "#ffffff"
   adaptive_icon_foreground: "assets/image.png"
+
+# Configuration for Flutter Native Splash
+flutter_native_splash:
+  color: "#ffffff"
+  image: assets/image.png
+  ios: true
+  android: true
