@@ -27,39 +27,44 @@ class _RecordsScreenState extends State<RecordsScreen> {
     super.initState();
     _recorder = FlutterSoundRecorder();
     _player = FlutterSoundPlayer();
+    _requestPermissions();
     _loadAudioList();
   }
 
   Future<void> _requestPermissions() async {
     PermissionStatus status = await Permission.microphone.request();
     if (status != PermissionStatus.granted) {
-      return; // Ensure further actions don't continue without permission
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Microphone permission is required')),
+      );
+      return; // Exit if permission is denied
     }
   }
 
   Future<void> _startRecording() async {
-    // Request permissions when starting to record
     await _requestPermissions();
-
-    Directory appDir = await getApplicationDocumentsDirectory();
-    String filePath =
-        '${appDir.path}/recording_${DateTime.now().millisecondsSinceEpoch}.aac';
-    await _recorder!.openRecorder();
-    await _recorder!.startRecorder(toFile: filePath);
-    setState(() {
-      _isRecording = true;
-      _isRecorded = false;
-      _filePath = filePath;
-    });
+    if (!_isRecording) {
+      Directory appDir = await getApplicationDocumentsDirectory();
+      String filePath =
+          '${appDir.path}/recording_${DateTime.now().millisecondsSinceEpoch}.aac';
+      await _recorder!.openRecorder();
+      await _recorder!.startRecorder(toFile: filePath);
+      setState(() {
+        _isRecording = true;
+        _isRecorded = false;
+        _filePath = filePath;
+      });
+    }
   }
 
   Future<void> _stopRecording() async {
-    await _recorder!.stopRecorder();
-    await _recorder!.closeRecorder();
-    setState(() {
-      _isRecording = false;
-      _isRecorded = true;
-    });
+    if (_isRecording) {
+      await _recorder!.stopRecorder();
+      setState(() {
+        _isRecording = false;
+        _isRecorded = true;
+      });
+    }
   }
 
   Future<void> _playAudio(String audioPath, int index) async {
@@ -139,7 +144,6 @@ class _RecordsScreenState extends State<RecordsScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Center(
-                // Centering the title
                 child: const Text(
                   'RECORDS',
                   style: TextStyle(
@@ -159,15 +163,8 @@ class _RecordsScreenState extends State<RecordsScreen> {
                       children: [
                         // Button for voice recording
                         ElevatedButton(
-                          onPressed: _isRecording
-                              ? null
-                              : () {
-                                  if (_isRecording) {
-                                    _stopRecording();
-                                  } else {
-                                    _startRecording();
-                                  }
-                                },
+                          onPressed:
+                              _isRecording ? _stopRecording : _startRecording,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.yellow[100],
                           ),
@@ -244,19 +241,17 @@ class _RecordsScreenState extends State<RecordsScreen> {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Center(
-        // Centering the audio item
         child: Row(
-          mainAxisAlignment: MainAxisAlignment.center, // Change here to center
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(text),
-            const SizedBox(width: 16), // Maintain spacing
+            const SizedBox(width: 16),
             IconButton(
               icon: Icon(
                 _playingIndex == index ? Icons.pause : Icons.play_arrow,
               ),
               onPressed: () async {
                 if (_playingIndex == index) {
-                  // If the same audio is already playing, stop it
                   await _player!.stopPlayer();
                   setState(() {
                     _isPlaying = false;
