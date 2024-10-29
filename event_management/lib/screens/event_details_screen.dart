@@ -22,43 +22,49 @@ class EventDetailsScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'TITLE',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
+              Center(
+                child: Column(
+                  children: [
+                    const Text(
+                      'TITLE',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      event.title,
+                      style: const TextStyle(fontSize: 18),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 24),
+                    const Text(
+                      'VIEW COUNTS',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
                 ),
               ),
-              const SizedBox(height: 8),
-              Text(
-                event.title,
-                style: const TextStyle(fontSize: 18),
-              ),
-              const SizedBox(height: 24),
-              const Text(
-                'VIEW COUNTS',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 16),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  GestureDetector(
-                    onTap: () => _openImagePreview(context, 0),
-                    child: _buildImageContainer(event.pic),
-                  ),
-                  GestureDetector(
-                    onTap: () => _openImagePreview(context, 1),
-                    child: _buildImageContainer(event.pic),
-                  ),
-                  GestureDetector(
-                    onTap: () => _openImagePreview(context, 2),
-                    child: _buildImageContainer(event.pic),
-                  ),
+                  _buildImageContainer(context, event.pic),
+                  _buildImageContainer(context, event.pic),
+                  _buildImageContainer(context, event.pic),
                 ],
+              ),
+              const SizedBox(height: 16),
+              Center(
+                child: Text(
+                  event.text, // Assuming event.text holds the description.
+                  style: const TextStyle(fontSize: 14),
+                  textAlign: TextAlign.center,
+                ),
               ),
             ],
           ),
@@ -74,22 +80,37 @@ class EventDetailsScreen extends StatelessWidget {
       MaterialPageRoute(
         builder: (context) => ImagePreviewScreen(
           images: [event.pic, event.pic, event.pic], // Add all the images
+          texts: [
+            event.text,
+            event.text,
+            event.text
+          ], // Add corresponding texts
           initialIndex: initialIndex,
         ),
       ),
     );
   }
 
-  Widget _buildImageContainer(String imagePath) {
-    return Container(
-      width: 100,
-      height: 100,
-      decoration: BoxDecoration(
-        image: DecorationImage(
-          image: AssetImage(imagePath),
-          fit: BoxFit.cover,
+  Widget _buildImageContainer(BuildContext context, String imagePath) {
+    return Flexible(
+      flex: 1, // Make the containers flexible
+      child: GestureDetector(
+        onTap: () =>
+            _openImagePreview(context, 0), // Adjust the index if needed
+        child: Column(
+          children: [
+            Container(
+              height: 100,
+              decoration: BoxDecoration(
+                image: DecorationImage(
+                  image: AssetImage(imagePath),
+                  fit: BoxFit.cover,
+                ),
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+          ],
         ),
-        borderRadius: BorderRadius.circular(8),
       ),
     );
   }
@@ -97,11 +118,13 @@ class EventDetailsScreen extends StatelessWidget {
 
 class ImagePreviewScreen extends StatefulWidget {
   final List<String> images;
+  final List<String> texts; // Add a list to hold texts
   final int initialIndex;
 
   const ImagePreviewScreen({
     super.key,
     required this.images,
+    required this.texts, // Accept texts
     required this.initialIndex,
   });
 
@@ -135,7 +158,7 @@ class _ImagePreviewScreenState extends State<ImagePreviewScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 const Text(
-                  'EVENT DETAILS PIC',
+                  '',
                   style: TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
@@ -154,6 +177,12 @@ class _ImagePreviewScreenState extends State<ImagePreviewScreen> {
                       height: double.infinity,
                     ),
                   ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  widget.texts[index], // Display the corresponding text
+                  style: const TextStyle(fontSize: 14),
+                  textAlign: TextAlign.center,
                 ),
               ],
             ),

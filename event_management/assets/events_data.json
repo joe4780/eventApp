@@ -2,22 +2,36 @@
   {
     "pic": "assets/event_pic1.png",
     "title": "Opening Ceremony",
-    "text": "Join us for the grand opening.",
+    "text": "Join us for the grand opening.Join us for the grand openingJoin us for the grand opening",
     "isRead": false,
     "viewCount": 0
   },
   {
     "pic": "assets/event_pic2.png",
     "title": "Workshop: Flutter Basics",
-    "text": "Learn the basics of Flutter.",
+    "text": "Learn the basics of Flutter.Join us for the grand openingJoin us for the grand opening",
     "isRead": true,
     "viewCount": 0
   },
   {
     "pic": "assets/event_pic3.png",
     "title": "Networking Event",
-    "text": "Meet fellow developers.",
+    "text": "Meet fellow developers.Join us for the grand openingJoin us for the grand openingJoin us for the grand opening",
     "isRead": false,
+    "viewCount": 0
+  },
+  {
+    "pic": "assets/event_pic4.png",
+    "title": "closing  Ceremony",
+    "text": "Join us for the grand opening.Join us for the grand openingJoin us for the grand opening",
+    "isRead": false,
+    "viewCount": 0
+  },
+  {
+    "pic": "assets/event_pic5.png",
+    "title": "Opening Ceremony",
+    "text": "Join us for the grand opening.Join us for the grand openingJoin us for the grand opening",
+    "isRead": true,
     "viewCount": 0
   }
 ]

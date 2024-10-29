@@ -33,6 +33,8 @@ flutter:
     - assets/event_pic1.png
     - assets/event_pic2.png
     - assets/event_pic3.png
+    - assets/event_pic4.png
+    - assets/event_pic5.png
   uses-material-design: true
 
 #Launcher
