@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'ticket_details_screen.dart';
+import 'ticket_data.dart' as ticketData; // Import the global ticket data
 
 class CreateTicketScreen extends StatefulWidget {
   const CreateTicketScreen({super.key});
@@ -17,7 +18,6 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
   final ceremonies = ['OPENING CEREMONY', 'CLOSING CEREMONY'];
   final ImagePicker _picker = ImagePicker();
 
-  // Updated image picker function for mobile
   Future<void> _pickImage() async {
     try {
       final XFile? pickedFile = await _picker.pickImage(
@@ -58,7 +58,7 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
         selectedImageUrl != null &&
         userName != null &&
         userName!.isNotEmpty) {
-      final ticketData = {
+      final ticketDataMap = {
         'type': selectedCeremony!,
         'name': userName!,
         'time': DateTime.now().toString(),
@@ -66,10 +66,15 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
         'image': selectedImageUrl!,
       };
 
+      // Add the ticket data to the global list
+      ticketData.TicketData.ticketList.add(ticketDataMap);
+      ticketData.TicketData
+          .saveData(); // Save the updated list to shared preferences
+
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => TicketDetailsScreen(ticketData: ticketData),
+          builder: (context) => TicketDetailsScreen(ticketData: ticketDataMap),
         ),
       );
     } else {

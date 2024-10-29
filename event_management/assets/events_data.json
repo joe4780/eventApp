@@ -3,18 +3,21 @@
     "pic": "assets/event_pic1.png",
     "title": "Opening Ceremony",
     "text": "Join us for the grand opening.",
-    "isRead": false
+    "isRead": false,
+    "viewCount": 0
   },
   {
     "pic": "assets/event_pic2.png",
     "title": "Workshop: Flutter Basics",
     "text": "Learn the basics of Flutter.",
-    "isRead": true
+    "isRead": true,
+    "viewCount": 0
   },
   {
     "pic": "assets/event_pic3.png",
     "title": "Networking Event",
     "text": "Meet fellow developers.",
-    "isRead": false
+    "isRead": false,
+    "viewCount": 0
   }
 ]

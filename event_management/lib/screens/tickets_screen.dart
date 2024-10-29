@@ -1,131 +1,196 @@
-import 'dart:convert';
 import 'package:event_management/screens/create_ticket_screen.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'ticket_details_screen.dart';
+import 'ticket_data.dart' as ticketData;
 
-class TicketsScreen extends StatelessWidget {
+class TicketsScreen extends StatefulWidget {
   const TicketsScreen({super.key});
 
-  Future<List<dynamic>> loadEventsData() async {
-    // Load and decode JSON file
-    final String jsonString =
-        await rootBundle.loadString('assets/events_data.json');
-    return json.decode(jsonString);
+  @override
+  _TicketsScreenState createState() => _TicketsScreenState();
+}
+
+class _TicketsScreenState extends State<TicketsScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Load ticket data from shared preferences
+    ticketData.TicketData.loadData().then((_) {
+      setState(() {}); // Refresh the UI after loading data
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'TICKET LIST',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
+        child: Center(
+          // Center the entire content
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              mainAxisAlignment:
+                  MainAxisAlignment.center, // Center content vertically
+              crossAxisAlignment:
+                  CrossAxisAlignment.center, // Center content horizontally
+              children: [
+                const Text(
+                  'TICKET LIST',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: () {
+                    // Push the CreateTicketScreen
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const CreateTicketScreen(),
+                      ),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.yellow[100],
+                  ),
+                  child: const Text(
+                    'CREATE A NEW TICKET',
+                    style: TextStyle(color: Colors.black),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Expanded(
+                  child: _buildTicketList(context),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTicketList(BuildContext context) {
+    final openingCeremonyTickets = ticketData.TicketData.ticketList
+        .where((ticket) => ticket['type'] == 'OPENING CEREMONY')
+        .cast<Map<String, dynamic>>() // Cast to List<Map<String, dynamic>>
+        .toList();
+    final closingCeremonyTickets = ticketData.TicketData.ticketList
+        .where((ticket) => ticket['type'] == 'CLOSING CEREMONY')
+        .cast<Map<String, dynamic>>() // Cast to List<Map<String, dynamic>>
+        .toList();
+
+    return ListView(
+      children: [
+        _buildSection('OPENING CEREMONY', openingCeremonyTickets, context),
+        _buildSection('CLOSING CEREMONY', closingCeremonyTickets, context),
+      ],
+    );
+  }
+
+  Widget _buildSection(
+      String title, List<Map<String, dynamic>> tickets, BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.center, // Center title and tickets
+      children: [
+        Text(
+          title,
+          style: const TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 8),
+        ReorderableListView(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          children: tickets.map((ticket) {
+            final key = ValueKey(ticket['name']);
+            return Dismissible(
+              key: key,
+              direction: DismissDirection.horizontal,
+              background: Container(
+                color: Colors.red,
+                alignment: Alignment.centerRight,
+                child: const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16.0),
+                  child: Icon(
+                    Icons.delete,
+                    color: Colors.white,
+                  ),
                 ),
               ),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: () {
+              onDismissed: (direction) {
+                ticketData.TicketData.removeTicket(ticket['name']);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('${ticket['name']} deleted'),
+                  ),
+                );
+                setState(() {}); // Refresh the UI
+              },
+              child: GestureDetector(
+                onTap: () {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => const CreateTicketScreen(),
+                      builder: (context) => TicketDetailsScreen(
+                        ticketData: {
+                          'name': ticket['name'],
+                          'seat': ticket['seat'],
+                          'type': ticket['type'],
+                          'time': ticket['time'],
+                          'image': ticket['image'],
+                        },
+                      ),
                     ),
                   );
                 },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.yellow[100],
-                ),
-                child: const Text(
-                  'CREATE A NEW TICKET',
-                  style: TextStyle(color: Colors.black),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Card(
+                        margin: const EdgeInsets.symmetric(
+                            vertical: 8.0,
+                            horizontal: 8.0), // Adjust horizontal margin
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                ticket['name'],
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                ticket['seat'],
+                                style: const TextStyle(fontSize: 16),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 24),
-
-              // Display tickets for each category
-              _buildTicketSection('OPENING CEREMONY TICKETS'),
-              _buildTicketInfo(context, 'JACK', 'A1 ROW7 COLUMN10',
-                  'Opening Ceremony', '10:00 AM'),
-              const SizedBox(height: 16),
-              _buildTicketInfo(context, 'ROSE', 'B7 ROW8 COLUMN3',
-                  'Opening Ceremony', '11:00 AM'),
-              const SizedBox(height: 24),
-
-              _buildTicketSection('CLOSING CEREMONY TICKETS'),
-              _buildTicketInfo(context, 'JACK', 'A5 ROW7 COLUMN3',
-                  'Closing Ceremony', '5:00 PM'),
-            ],
-          ),
+            );
+          }).toList(),
+          onReorder: (oldIndex, newIndex) {
+            if (newIndex > oldIndex) newIndex--;
+            final ticket = tickets.removeAt(oldIndex);
+            tickets.insert(newIndex, ticket);
+            // Save the new order to shared preferences
+            ticketData.TicketData.saveData();
+          },
         ),
-      ),
-    );
-  }
-
-  Widget _buildTicketSection(String title) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Text(
-        title,
-        style: const TextStyle(
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-    );
-  }
-
-  // Method to build ticket info and navigate to details screen
-  Widget _buildTicketInfo(BuildContext context, String name, String seat,
-      String type, String time) {
-    return GestureDetector(
-      onTap: () async {
-        // Load event data from JSON
-        final eventsData = await loadEventsData();
-
-        // Find the event with a matching title for the type
-        final event = eventsData.firstWhere((event) => event['title'] == type,
-            orElse: () => null);
-
-        // Use default image if event or image path not found
-        String imagePath =
-            event != null ? event['pic'] : 'assets/event_pic1.png';
-
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => TicketDetailsScreen(
-              ticketData: {
-                'name': name,
-                'seat': seat,
-                'type': type,
-                'time': time,
-                'image': imagePath, // Pass dynamic image path
-              },
-            ),
-          ),
-        );
-      },
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            name,
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(seat),
-        ],
-      ),
+      ],
     );
   }
 }
