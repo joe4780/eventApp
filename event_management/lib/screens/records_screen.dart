@@ -20,13 +20,13 @@ class _RecordsScreenState extends State<RecordsScreen> {
   bool _isPlaying = false;
   String? _filePath;
   List<String> _audioList = [];
+  int _playingIndex = -1; // Track which audio is currently playing
 
   @override
   void initState() {
     super.initState();
     _recorder = FlutterSoundRecorder();
     _player = FlutterSoundPlayer();
-    _requestPermissions();
     _loadAudioList();
   }
 
@@ -38,6 +38,9 @@ class _RecordsScreenState extends State<RecordsScreen> {
   }
 
   Future<void> _startRecording() async {
+    // Request permissions when starting to record
+    await _requestPermissions();
+
     Directory appDir = await getApplicationDocumentsDirectory();
     String filePath =
         '${appDir.path}/recording_${DateTime.now().millisecondsSinceEpoch}.aac';
@@ -59,18 +62,20 @@ class _RecordsScreenState extends State<RecordsScreen> {
     });
   }
 
-  Future<void> _playAudio(String audioPath) async {
+  Future<void> _playAudio(String audioPath, int index) async {
     await _player!.openPlayer();
     await _player!.startPlayer(
       fromURI: audioPath,
       whenFinished: () {
         setState(() {
           _isPlaying = false;
+          _playingIndex = -1; // Reset playing index when finished
         });
       },
     );
     setState(() {
       _isPlaying = true;
+      _playingIndex = index; // Set the current playing index
     });
   }
 
@@ -103,7 +108,7 @@ class _RecordsScreenState extends State<RecordsScreen> {
       builder: (context) {
         return AlertDialog(
           title: const Text('Success'),
-          content: const Text('Submit successfully'),
+          content: const Text('Submitted successfully'),
           actions: [
             TextButton(
               onPressed: () {
@@ -133,11 +138,14 @@ class _RecordsScreenState extends State<RecordsScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'RECORDS',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
+              Center(
+                // Centering the title
+                child: const Text(
+                  'RECORDS',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
               const SizedBox(height: 24),
@@ -146,32 +154,43 @@ class _RecordsScreenState extends State<RecordsScreen> {
                 color: Colors.grey[200],
                 child: Column(
                   children: [
-                    ElevatedButton(
-                      onPressed: _isRecording ? null : _startRecording,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.yellow[100],
-                      ),
-                      child: const Text('VOICE RECORD'),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: [
+                        // Button for voice recording
+                        ElevatedButton(
+                          onPressed: _isRecording
+                              ? null
+                              : () {
+                                  if (_isRecording) {
+                                    _stopRecording();
+                                  } else {
+                                    _startRecording();
+                                  }
+                                },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.yellow[100],
+                          ),
+                          child: Text(
+                              _isRecording ? 'STOP RECORDING' : 'VOICE RECORD'),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 8),
-                    Text(_isRecording ? 'Recording...' : 'Ready to record'),
-                    const SizedBox(height: 8),
-                    ElevatedButton(
-                      onPressed: _isRecording ? _stopRecording : null,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red[300],
-                      ),
-                      child: const Text('STOP RECORDING'),
-                    ),
-                    const SizedBox(height: 8),
-                    ElevatedButton(
-                      onPressed: _isRecorded && !_isPlaying
-                          ? () => _playAudio(_filePath!)
-                          : null,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.yellow[100],
-                      ),
-                      child: const Text('VOICE PLAY'),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: [
+                        // Button for playing the audio
+                        ElevatedButton(
+                          onPressed: _isRecorded && !_isPlaying
+                              ? () => _playAudio(_filePath!, _audioList.length)
+                              : null,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.yellow[100],
+                          ),
+                          child: const Text('VOICE PLAY'),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 8),
                     Align(
@@ -205,6 +224,7 @@ class _RecordsScreenState extends State<RecordsScreen> {
                             return _buildAudioItem(
                               'AUDIO ${index + 1}',
                               audioPath,
+                              index,
                             );
                           },
                         ),
@@ -220,30 +240,36 @@ class _RecordsScreenState extends State<RecordsScreen> {
     );
   }
 
-  Widget _buildAudioItem(String text, String audioPath) {
+  Widget _buildAudioItem(String text, String audioPath, int index) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(text),
-          IconButton(
-            icon: const Icon(Icons.play_arrow),
-            onPressed: () async {
-              await _playAudio(audioPath);
-            },
-          ),
-        ],
+      child: Center(
+        // Centering the audio item
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center, // Change here to center
+          children: [
+            Text(text),
+            const SizedBox(width: 16), // Maintain spacing
+            IconButton(
+              icon: Icon(
+                _playingIndex == index ? Icons.pause : Icons.play_arrow,
+              ),
+              onPressed: () async {
+                if (_playingIndex == index) {
+                  // If the same audio is already playing, stop it
+                  await _player!.stopPlayer();
+                  setState(() {
+                    _isPlaying = false;
+                    _playingIndex = -1; // Reset playing index
+                  });
+                } else {
+                  await _playAudio(audioPath, index);
+                }
+              },
+            ),
+          ],
+        ),
       ),
     );
-  }
-
-  Future<void> _stopAudio() async {
-    if (_isPlaying) {
-      await _player!.stopPlayer();
-      setState(() {
-        _isPlaying = false;
-      });
-    }
   }
 }
