@@ -1,19 +1,22 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'event_details_screen.dart';
 
 class Event {
   final String pic;
   final String title;
   final String text;
-  final bool isRead;
+  bool isRead; // Changed to non-final to allow updates
+  final String id; // Added to uniquely identify events
 
   Event({
     required this.pic,
     required this.title,
     required this.text,
     required this.isRead,
+    required this.id,
   });
 
   factory Event.fromJson(Map<String, dynamic> json) {
@@ -22,8 +25,17 @@ class Event {
       title: json['title'],
       text: json['text'],
       isRead: json['isRead'],
+      id: json['id'] ?? UniqueKey().toString(), // Generate ID if not provided
     );
   }
+
+  Map<String, dynamic> toJson() => {
+        'pic': pic,
+        'title': title,
+        'text': text,
+        'isRead': isRead,
+        'id': id,
+      };
 }
 
 class EventsScreen extends StatefulWidget {
@@ -37,6 +49,7 @@ class _EventsScreenState extends State<EventsScreen> {
   List<Event> _allEvents = [];
   List<Event> _filteredEvents = [];
   String _currentFilter = 'ALL';
+  final String _prefsKey = 'event_read_status';
 
   @override
   void initState() {
@@ -45,14 +58,43 @@ class _EventsScreenState extends State<EventsScreen> {
   }
 
   Future<void> _loadEventData() async {
+    // Load events data
     final String response =
         await rootBundle.loadString('assets/events_data.json');
     final List<dynamic> data = jsonDecode(response);
+    _allEvents = data.map((json) => Event.fromJson(json)).toList();
+
+    // Load saved read status
+    final prefs = await SharedPreferences.getInstance();
+    final savedStatuses = prefs.getStringList(_prefsKey) ?? [];
+
+    // Apply saved read status to events
+    for (var event in _allEvents) {
+      if (savedStatuses.contains(event.id)) {
+        event.isRead = true;
+      }
+    }
 
     setState(() {
-      _allEvents = data.map((json) => Event.fromJson(json)).toList();
       _applyFilter(_currentFilter);
     });
+  }
+
+  Future<void> _saveReadStatus() async {
+    final prefs = await SharedPreferences.getInstance();
+    final readEventIds = _allEvents
+        .where((event) => event.isRead)
+        .map((event) => event.id)
+        .toList();
+    await prefs.setStringList(_prefsKey, readEventIds);
+  }
+
+  void _markAsRead(Event event) async {
+    setState(() {
+      event.isRead = true;
+      _applyFilter(_currentFilter);
+    });
+    await _saveReadStatus();
   }
 
   void _applyFilter(String filter) {
@@ -102,7 +144,19 @@ class _EventsScreenState extends State<EventsScreen> {
                   ? ListView.builder(
                       itemCount: _filteredEvents.length,
                       itemBuilder: (context, index) {
-                        return _EventListItem(event: _filteredEvents[index]);
+                        return _EventListItem(
+                          event: _filteredEvents[index],
+                          onTap: () async {
+                            await Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => EventDetailsScreen(
+                                    event: _filteredEvents[index]),
+                              ),
+                            );
+                            _markAsRead(_filteredEvents[index]);
+                          },
+                        );
                       },
                     )
                   : const Center(child: CircularProgressIndicator()),
@@ -117,8 +171,8 @@ class _EventsScreenState extends State<EventsScreen> {
     return TextButton(
       onPressed: () => _applyFilter(text),
       style: ButtonStyle(
-        backgroundColor: WidgetStateProperty.resolveWith<Color>(
-          (Set<WidgetState> states) {
+        backgroundColor: MaterialStateProperty.resolveWith<Color>(
+          (Set<MaterialState> states) {
             return _currentFilter == text
                 ? Colors.blue.withOpacity(0.2)
                 : Colors.transparent;
@@ -139,20 +193,17 @@ class _EventsScreenState extends State<EventsScreen> {
 
 class _EventListItem extends StatelessWidget {
   final Event event;
+  final VoidCallback onTap;
 
-  const _EventListItem({required this.event});
+  const _EventListItem({
+    required this.event,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => EventDetailsScreen(event: event),
-          ),
-        );
-      },
+      onTap: onTap,
       child: Container(
         padding: const EdgeInsets.all(16),
         child: Row(
@@ -175,10 +226,18 @@ class _EventListItem extends StatelessWidget {
                   Text(
                     event.title,
                     style: const TextStyle(
-                        fontSize: 18, fontWeight: FontWeight.bold),
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 8),
-                  Text(event.text),
+                  Text(
+                    event.text,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                   const SizedBox(height: 8),
                   Text(event.isRead ? 'READ' : 'UNREAD'),
                 ],
