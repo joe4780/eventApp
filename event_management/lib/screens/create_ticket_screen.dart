@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
+import 'dart:math';
 import 'ticket_details_screen.dart';
 import 'ticket_data.dart' as ticketData; // Import the global ticket data
 
@@ -17,6 +18,14 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
   String? userName;
   final ceremonies = ['OPENING CEREMONY', 'CLOSING CEREMONY'];
   final ImagePicker _picker = ImagePicker();
+
+  String generateRandomSeat() {
+    final random = Random();
+    String rowCharacter = ['A', 'B', 'C'][random.nextInt(3)];
+    int rowNumber = random.nextInt(10) + 1; // 1 to 10
+    int columnNumber = random.nextInt(10) + 1; // 1 to 10
+    return '$rowCharacter$rowNumber row $columnNumber column $columnNumber';
+  }
 
   Future<void> _pickImage() async {
     try {
@@ -58,11 +67,14 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
         selectedImageUrl != null &&
         userName != null &&
         userName!.isNotEmpty) {
+      // Generate a random seat
+      String seat = generateRandomSeat();
+
       final ticketDataMap = {
         'type': selectedCeremony!,
         'name': userName!,
         'time': DateTime.now().toString(),
-        'seat': 'A5 ROW7 COLUMN3',
+        'seat': seat, // Use the generated random seat
         'image': selectedImageUrl!,
       };
 
