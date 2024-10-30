@@ -8,8 +8,8 @@ class Event {
   final String pic;
   final String title;
   final String text;
-  bool isRead; // Changed to non-final to allow updates
-  final String id; // Added to uniquely identify events
+  bool isRead;
+  final String id;
 
   Event({
     required this.pic,
@@ -25,7 +25,7 @@ class Event {
       title: json['title'],
       text: json['text'],
       isRead: json['isRead'],
-      id: json['id'] ?? UniqueKey().toString(), // Generate ID if not provided
+      id: json['id'] ?? UniqueKey().toString(),
     );
   }
 
@@ -58,43 +58,55 @@ class _EventsScreenState extends State<EventsScreen> {
   }
 
   Future<void> _loadEventData() async {
-    // Load events data
-    final String response =
-        await rootBundle.loadString('assets/events_data.json');
-    final List<dynamic> data = jsonDecode(response);
-    _allEvents = data.map((json) => Event.fromJson(json)).toList();
+    try {
+      // Load events data
+      final String response =
+          await rootBundle.loadString('assets/events_data.json');
+      final List<dynamic> data = jsonDecode(response);
+      _allEvents = data.map((json) => Event.fromJson(json)).toList();
 
-    // Load saved read status
-    final prefs = await SharedPreferences.getInstance();
-    final savedStatuses = prefs.getStringList(_prefsKey) ?? [];
+      // Load saved read status
+      final prefs = await SharedPreferences.getInstance();
+      final savedStatuses = prefs.getStringList(_prefsKey) ?? [];
 
-    // Apply saved read status to events
-    for (var event in _allEvents) {
-      if (savedStatuses.contains(event.id)) {
-        event.isRead = true;
+      // Apply saved read status to events
+      for (var event in _allEvents) {
+        if (savedStatuses.contains(event.id)) {
+          event.isRead = true;
+        }
       }
-    }
 
-    setState(() {
-      _applyFilter(_currentFilter);
-    });
+      setState(() {
+        _applyFilter(_currentFilter);
+      });
+    } catch (e) {
+      debugPrint('Error loading event data: $e');
+    }
   }
 
   Future<void> _saveReadStatus() async {
-    final prefs = await SharedPreferences.getInstance();
-    final readEventIds = _allEvents
-        .where((event) => event.isRead)
-        .map((event) => event.id)
-        .toList();
-    await prefs.setStringList(_prefsKey, readEventIds);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final readEventIds = _allEvents
+          .where((event) => event.isRead)
+          .map((event) => event.id)
+          .toList();
+      await prefs.setStringList(_prefsKey, readEventIds);
+    } catch (e) {
+      debugPrint('Error saving read status: $e');
+    }
   }
 
-  void _markAsRead(Event event) async {
-    setState(() {
-      event.isRead = true;
+  Future<void> _markAsRead(Event event) async {
+    if (!event.isRead) {
+      setState(() {
+        event.isRead = true;
+      });
+      // Save immediately when marking as read
+      await _saveReadStatus();
+      // Update filtered events if necessary
       _applyFilter(_currentFilter);
-    });
-    await _saveReadStatus();
+    }
   }
 
   void _applyFilter(String filter) {
@@ -147,14 +159,18 @@ class _EventsScreenState extends State<EventsScreen> {
                         return _EventListItem(
                           event: _filteredEvents[index],
                           onTap: () async {
+                            // Mark as read before navigating
+                            await _markAsRead(_filteredEvents[index]);
+                            // Then navigate to details screen
+                            if (!mounted) return;
                             await Navigator.push(
                               context,
                               MaterialPageRoute(
                                 builder: (context) => EventDetailsScreen(
-                                    event: _filteredEvents[index]),
+                                  event: _filteredEvents[index],
+                                ),
                               ),
                             );
-                            _markAsRead(_filteredEvents[index]);
                           },
                         );
                       },
